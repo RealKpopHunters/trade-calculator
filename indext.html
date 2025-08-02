@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Trade Calculator</title>
+    <style>
+        /* --- Modern Color Palette & Font Settings --- */
+        :root {
+            --bg-color: #2D2D2D;
+            --fg-color: #E0E0E0;
+            --accent-color: #4ECDC4;
+            --secondary-color: #555555;
+            --entry-bg: #3A3A3A;
+            --border-color: #444444;
+            --title-font: "Segoe UI", "Malgun Gothic", sans-serif;
+            --body-font: "Segoe UI", "Malgun Gothic", sans-serif;
+        }
+
+        /* --- General Styles --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--fg-color);
+            font-family: var(--body-font);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* --- Card Style (replaces LabelFrame) --- */
+        .card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .card-title {
+            font-family: var(--title-font);
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--accent-color);
+            padding-left: 0.75rem;
+        }
+        
+        /* --- Form Elements --- */
+        .form-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .form-group label {
+            font-size: 1rem;
+            min-width: 100px;
+        }
+
+        input[type="number"], select {
+            background-color: var(--entry-bg);
+            color: var(--fg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 0.75rem;
+            font-size: 1rem;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            flex-grow: 1;
+        }
+
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.3);
+        }
+
+        .ratio-inputs {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-grow: 1;
+        }
+        .ratio-inputs select { flex-grow: 2; }
+        .ratio-inputs input { flex-grow: 1; }
+        .ratio-separator { font-size: 1.5rem; color: var(--fg-color); }
+
+        /* --- Strategy Section (Radio Buttons) --- */
+        .strategy-options {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .radio-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        input[type="radio"] {
+            accent-color: var(--accent-color);
+        }
+        .custom-discount-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        #custom-discount-entry { width: 70px; }
+        
+        /* --- Result Section --- */
+        .result-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .result-box {
+            background-color: var(--entry-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            flex: 1;
+            min-width: 200px;
+        }
+        .result-label {
+            font-size: 1rem;
+            color: var(--fg-color);
+            margin-bottom: 0.5rem;
+        }
+        .result-value-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .result-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            min-height: 48px; /* Prevent layout shift */
+        }
+        .copy-btn {
+            background-color: var(--secondary-color);
+            color: var(--fg-color);
+            border: none;
+            border-radius: 5px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .copy-btn:hover:not(:disabled) {
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+        }
+        .copy-btn:disabled {
+            background-color: #444;
+            cursor: not-allowed;
+        }
+        .result-separator {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+        .final-ratio-display {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 1.2rem;
+            font-style: italic;
+            color: var(--accent-color);
+            min-height: 2rem; /* Prevent layout shift */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Input Section -->
+        <div class="card">
+            <h2 class="card-title">Market Ratio Input</h2>
+            <div class="form-group">
+                <label for="currency-combobox">Market Ratio:</label>
+                <div class="ratio-inputs">
+                    <select id="currency-combobox">
+                        <option value="Chaos Orb">Chaos Orb</option>
+                        <option value="Divine Orb">Divine Orb</option>
+                    </select>
+                    <input type="number" id="market-currency-qty" value="1" min="1">
+                    <span class="ratio-separator">:</span>
+                    <input type="number" id="market-item-qty" value="100" min="1">
+                    <span>Items</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="my-item-qty">My Items:</label>
+                <input type="number" id="my-item-qty" value="1000" min="1">
+            </div>
+        </div>
+
+        <!-- Pricing Strategy Section -->
+        <div class="card">
+            <h2 class="card-title">Pricing Strategy</h2>
+            <div class="strategy-options">
+                <div class="radio-group">
+                    <input type="radio" id="discount0" name="discount" value="0" checked>
+                    <label for="discount0">Standard (0%)</label>
+                </div>
+                <div class="radio-group">
+                    <input type="radio" id="discount1" name="discount" value="1">
+                    <label for="discount1">1% Discount</label>
+                </div>
+                <div class="radio-group">
+                    <input type="radio" id="discount5" name="discount" value="5">
+                    <label for="discount5">5% Discount</label>
+                </div>
+                <div class="radio-group">
+                    <input type="radio" id="discount10" name="discount" value="10">
+                    <label for="discount10">10% Discount</label>
+                </div>
+                <div class="radio-group custom-discount-group">
+                    <input type="radio" id="discountCustom" name="discount" value="-1">
+                    <label for="discountCustom">Custom:</label>
+                    <input type="number" id="custom-discount-entry" min="0" disabled>
+                    <span>%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Section -->
+        <div class="card">
+            <h2 class="card-title">Optimal Trade Offer</h2>
+            <div class="result-container">
+                <div class="result-box">
+                    <div id="result-currency-label" class="result-label">Chaos Orb</div>
+                    <div class="result-value-wrapper">
+                        <div id="result-currency-qty" class="result-value"></div>
+                        <button id="copy-currency-btn" class="copy-btn" disabled>Copy</button>
+                    </div>
+                </div>
+
+                <div class="result-separator">:</div>
+
+                <div class="result-box">
+                    <div class="result-label">Items</div>
+                    <div class="result-value-wrapper">
+                        <div id="result-item-qty" class="result-value"></div>
+                        <button id="copy-items-btn" class="copy-btn" disabled>Copy</button>
+                    </div>
+                </div>
+            </div>
+            <div class="final-ratio-display" id="final-ratio"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Element References ---
+            const marketCurrencyQtyEl = document.getElementById('market-currency-qty');
+            const marketItemQtyEl = document.getElementById('market-item-qty');
+            const myItemQtyEl = document.getElementById('my-item-qty');
+            const currencyCombobox = document.getElementById('currency-combobox');
+            
+            const customDiscountEntryEl = document.getElementById('custom-discount-entry');
+            const discountRadios = document.querySelectorAll('input[name="discount"]');
+            
+            const resultCurrencyLabelEl = document.getElementById('result-currency-label');
+            const resultCurrencyQtyEl = document.getElementById('result-currency-qty');
+            const resultItemQtyEl = document.getElementById('result-item-qty');
+            const finalRatioEl = document.getElementById('final-ratio');
+            
+            const copyCurrencyBtn = document.getElementById('copy-currency-btn');
+            const copyItemsBtn = document.getElementById('copy-items-btn');
+
+            // --- Main Calculation Logic ---
+            function updateCalculation() {
+                try {
+                    const marketCurrency = parseFloat(marketCurrencyQtyEl.value);
+                    const marketItem = parseFloat(marketItemQtyEl.value);
+                    const myItemQuantity = parseInt(myItemQtyEl.value, 10);
+
+                    let discountPercentage = parseFloat(document.querySelector('input[name="discount"]:checked').value);
+                    if (discountPercentage === -1) {
+                        discountPercentage = parseFloat(customDiscountEntryEl.value) || 0;
+                    }
+
+                    if (isNaN(marketCurrency) || isNaN(marketItem) || isNaN(myItemQuantity) ||
+                        marketCurrency <= 0 || marketItem <= 0 || myItemQuantity <= 0) {
+                        clearResults();
+                        return;
+                    }
+
+                    const baseRate = marketItem / marketCurrency;
+                    const discountedRate = baseRate * (1 + discountPercentage / 100.0);
+                    
+                    let bestTrade = null;
+                    
+                    if (discountedRate > 0) {
+                        const maxCurrencyToCheck = Math.floor(myItemQuantity / discountedRate) + 2;
+                        for (let currencyToReceive = 1; currencyToReceive < maxCurrencyToCheck; currencyToReceive++) {
+                            const itemsToSell = Math.floor(currencyToReceive * discountedRate) + 1;
+                            if (itemsToSell <= myItemQuantity) {
+                                bestTrade = { currency: currencyToReceive, items: itemsToSell };
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+
+                    if (bestTrade) {
+                        resultCurrencyQtyEl.textContent = bestTrade.currency;
+                        resultItemQtyEl.textContent = bestTrade.items;
+                        resultCurrencyLabelEl.textContent = currencyCombobox.value;
+
+                        let finalRatioStr;
+                        if (discountedRate >= 1) {
+                            finalRatioStr = `1 : ${discountedRate.toFixed(4)}`;
+                        } else {
+                            finalRatioStr = `${(1 / discountedRate).toFixed(4)} : 1`;
+                        }
+                        finalRatioEl.textContent = `Final Ratio: ${finalRatioStr}`;
+
+                        copyCurrencyBtn.disabled = false;
+                        copyItemsBtn.disabled = false;
+                    } else {
+                        clearResults();
+                    }
+
+                } catch (error) {
+                    console.error("Calculation Error:", error);
+                    clearResults();
+                }
+            }
+            
+            // --- Helper Functions ---
+            function clearResults() {
+                resultCurrencyQtyEl.textContent = "";
+                resultItemQtyEl.textContent = "";
+                finalRatioEl.textContent = "";
+                resultCurrencyLabelEl.textContent = currencyCombobox.value;
+                copyCurrencyBtn.disabled = true;
+                copyItemsBtn.disabled = true;
+            }
+
+            function handleDiscountChange() {
+                const selectedValue = document.querySelector('input[name="discount"]:checked').value;
+                if (selectedValue === '-1') {
+                    customDiscountEntryEl.disabled = false;
+                    customDiscountEntryEl.focus();
+                } else {
+                    customDiscountEntryEl.disabled = true;
+                    customDiscountEntryEl.value = '';
+                }
+                updateCalculation();
+            }
+
+            async function copyToClipboard(text, button) {
+                if (!text) return;
+                try {
+                    await navigator.clipboard.writeText(text);
+                    const originalText = button.textContent;
+                    button.textContent = 'Copied!';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                    }, 1500);
+                } catch (err) {
+                    console.error('Failed to copy: ', err);
+                }
+            }
+
+            // --- Event Listeners ---
+            [marketCurrencyQtyEl, marketItemQtyEl, myItemQtyEl, currencyCombobox, customDiscountEntryEl].forEach(el => {
+                el.addEventListener('input', updateCalculation);
+            });
+            
+            discountRadios.forEach(radio => {
+                radio.addEventListener('change', handleDiscountChange);
+            });
+
+            copyCurrencyBtn.addEventListener('click', () => copyToClipboard(resultCurrencyQtyEl.textContent, copyCurrencyBtn));
+            copyItemsBtn.addEventListener('click', () => copyToClipboard(resultItemQtyEl.textContent, copyItemsBtn));
+
+            // --- Initial Run ---
+            updateCalculation();
+        });
+    </script>
+</body>
+</html>
